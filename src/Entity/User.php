@@ -6,11 +6,15 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
+#[Vich\Uploadable]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    // Fields
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -34,6 +38,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50)]
     private ?string $pseudo = null;
 
+    #[Vich\UploadableField(mapping: 'user_photo', fileNameProperty: 'photoName')]
+    private ?File $photoFile = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $photoName = null;
 
@@ -46,6 +53,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?bool $isRevoked = null;
 
+    #[ORM\Column]
+    private ?\DateTimeImmutable $updatedAt = null;
+
+
+    // Constructor
+    public function __construct()
+    {
+        $this->roles = ['ROLE_USER'];
+        $this->isApproved = false;
+        $this->isRevoked = false;
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+
+    // Getters and Setters
     public function getId(): ?int
     {
         return $this->id;
@@ -131,6 +154,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getPhotoFile(): ?File
+    {
+        return $this->photoFile;
+    }
+
+    public function setPhotoFile(?File $imageFile): void
+    {
+        $this->photoFile = $imageFile;
+        if ($imageFile !== null) {
+            $this->updatedAt = new \DateTimeImmutable();
+        }
+    }
+
     public function getPhotoName(): ?string
     {
         return $this->photoName;
@@ -175,6 +211,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsRevoked(bool $isRevoked): static
     {
         $this->isRevoked = $isRevoked;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
