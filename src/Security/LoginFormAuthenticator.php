@@ -26,7 +26,10 @@ final class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
     public const LOGIN_ROUTE = 'app_login';
     private UserRepository $userRepository;
 
-    public function __construct(private UrlGeneratorInterface $urlGenerator, UserRepository $userRepository) { $this->userRepository = $userRepository;}
+    public function __construct(private UrlGeneratorInterface $urlGenerator, UserRepository $userRepository)
+    {
+        $this->userRepository = $userRepository;
+    }
 
     public function authenticate(Request $request): Passport
     {
@@ -47,6 +50,12 @@ final class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
                     );
                 }
 
+                if ($user->isRevoked()) {
+                    throw new CustomUserMessageAuthenticationException(
+                        'Votre compte a été révoqué par un administrateur.'
+                    );
+                }
+
                 return $user;
             }),
             new PasswordCredentials($request->getPayload()->getString('password')),
@@ -62,7 +71,12 @@ final class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
             return new RedirectResponse($targetPath);
         }
 
-        // For example:
+        if ($token->getUser() instanceof User) {
+            $user = $token->getUser();
+            if (in_array('ROLE_ADMIN', $user->getRoles())) {
+                return new RedirectResponse($this->urlGenerator->generate('admin'));
+            }
+        }
         return new RedirectResponse($this->urlGenerator->generate('app_test'));
     }
 

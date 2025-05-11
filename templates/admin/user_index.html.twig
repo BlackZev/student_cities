@@ -1,0 +1,85 @@
+{# templates/admin/user_index.html.twig #}
+{% extends '@EasyAdmin/crud/index.html.twig' %}
+
+{% block body_javascript %}
+    {{ parent() }}
+
+    {# 2‑A.  On inclut le HTML du modal de confirmation #}
+    {% include 'admin/_confirm_modal.html.twig' %}
+
+    {# 2‑B.  Recherche "live" + compteur + modals #}
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+
+        /* === Recherche live + compteur =================================== */
+        const q        = document.querySelector('input[name="query"]');
+        const rows     = document.querySelectorAll('table tbody tr');
+        const counter  = document.querySelector('.list-pagination-counter');
+
+        if (q) {
+          q.setAttribute('type', 'text');                  // enlève la croix native
+          q.addEventListener('keydown', e => {             // bloque Enter
+            if (e.key === 'Enter') e.preventDefault();
+          });
+
+          const updateCounter = () => {
+            const visible = [...rows].filter(r => r.style.display !== 'none').length;
+            if (!counter) return;
+            counter.textContent =
+              visible === 0 ? 'Aucun résultat' :
+              visible === 1 ? '1 résultat'     :
+              visible + ' résultats';
+          };
+
+          const filterRows = () => {
+            const needle = q.value.toLowerCase();
+            rows.forEach(row => {
+              const text = [...row.querySelectorAll('td')]
+                .slice(0, 3)                                // id, email, pseudo
+                .map(td => td.innerText.toLowerCase())
+                .join(' ');
+              row.style.display = text.includes(needle) ? '' : 'none';
+            });
+            updateCounter();
+          };
+
+          q.addEventListener('input', filterRows);
+          updateCounter();
+        }
+
+        /* === Modal de confirmation ====================================== */
+        const modalEl   = document.getElementById('confirmModal');
+        const modal     = new bootstrap.Modal(modalEl);
+        const body      = document.getElementById('confirmModalBody');
+        const confirm   = document.getElementById('confirmModalBtn');
+
+        /* Approuver ------------------------------------------------------ */
+        document.querySelectorAll('.approve-link').forEach(link => {
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            body.textContent     = "Confirmer l'approbation de l'utilisateur ?";
+            confirm.href         = link.href;
+            confirm.className    = 'btn btn-success';
+            confirm.textContent  = 'Approuver';
+            modal.show();
+          });
+        });
+
+        /* Révoquer / Rétablir ------------------------------------------- */
+        document.querySelectorAll('.revoke-link').forEach(link => {
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            const isRevoked = link.innerText.trim() === 'Rétablir';
+            body.textContent = isRevoked
+              ? "Confirmer le rétablissement de l'utilisateur ?"
+              : "Confirmer la révocation de l'utilisateur ?";
+            confirm.href        = link.href;
+            confirm.className   = isRevoked ? 'btn btn-success' : 'btn btn-warning';
+            confirm.textContent = isRevoked ? 'Rétablir' : 'Révoquer';
+            modal.show();
+          });
+        });
+
+      });
+    </script>
+{% endblock %}
