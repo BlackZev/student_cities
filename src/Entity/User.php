@@ -41,8 +41,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Vich\UploadableField(mapping: 'user_photo', fileNameProperty: 'photoName')]
     private ?File $photoFile = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $photoName = null;
+    #[ORM\Column(length: 255, nullable: false, options: ['default' => 'default.png'])]
+    private ?string $photoName = "default.png";
 
     #[ORM\Column]
     private ?bool $isApproved = null;
